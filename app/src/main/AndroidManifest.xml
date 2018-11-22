@@ -19,13 +19,21 @@
 
         <receiver android:name=".MyWidget">
             <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/mani"/>
+                android:resource="@xml/mani" />
         </receiver>
 
+        <activity android:name=".SettingsActivity">
+
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+
+        </activity>
     </application>
 
 </manifest>
