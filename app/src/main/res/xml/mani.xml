@@ -9,4 +9,4 @@
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/clock_widget"/>
+    android:initialLayout="@layout/clock_widget_horizontal"/>

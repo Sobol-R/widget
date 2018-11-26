@@ -1,13 +1,16 @@
 package banana.digital.widjet;
 
 import android.app.AlarmManager;
-import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.SystemClock;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
@@ -16,7 +19,7 @@ import java.util.GregorianCalendar;
 
 public class MyWidget extends AppWidgetProvider {
 
-    private static final String REFRESH_ACTION = "REFRESH_ACTION";
+    public static final String REFRESH_ACTION = "REFRESH_ACTION";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -31,12 +34,38 @@ public class MyWidget extends AppWidgetProvider {
 
         for (int i = 0; i < appWidgetIds.length; i++) {
             int currentId = appWidgetIds[i];
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.clock_widget);
+
+            final Bundle widgetOptions = appWidgetManager.getAppWidgetOptions(currentId);
+            final int minHeight = widgetOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+            final RemoteViews views;
+//            if (minHeight > 100) {
+//                views = new RemoteViews((context.getPackageName()), )
+//            }
+
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.clock_widget_horizontal);
             views.setTextViewText(R.id.time_output, String.valueOf(hour)
                     + " : " + minstr);
+
+            final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+            final int color = sharedPreferences.getInt("BACKGROUND_COLOR_" + appWidgetIds[i], Color.BLACK);
+            views.setInt(R.id.root_view, "setBackgroundColor", color);
+
+            Intent intent = new Intent(context, SettingsActivity.class);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, currentId);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            views.setOnClickPendingIntent(R.id.root_view, pendingIntent);
+
             appWidgetManager.updateAppWidget(currentId, views);
         }
-        scheduleUpdates(context, appWidgetIds);
+        scheduleUpdates(context);
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        final Intent intent = new Intent(context, MyWidget.class);
+        intent.setAction(REFRESH_ACTION);
+        context.sendBroadcast(intent);
     }
 
     @Override
@@ -44,16 +73,16 @@ public class MyWidget extends AppWidgetProvider {
         super.onReceive(context, intent);
         if (intent.getAction() != null && intent.getAction().equals(REFRESH_ACTION)) {
             final AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            final int[] appWidgetIds = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_ID);
+            ComponentName name  = new ComponentName(context, MyWidget.class);
+            final int[] appWidgetIds = appWidgetManager.getAppWidgetIds(name);
             onUpdate(context, appWidgetManager, appWidgetIds);
         }
     }
 
-    private void scheduleUpdates(Context context, int[] appWidgetIds) {
+    private void scheduleUpdates(Context context) {
         final AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         final Intent intent = new Intent(context, MyWidget.class);
         intent.setAction(REFRESH_ACTION);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetIds);
         final PendingIntent pendingIntent= PendingIntent.getBroadcast(context, 0, intent, 0);
 
         final Calendar calendar = Calendar.getInstance();
@@ -64,4 +93,5 @@ public class MyWidget extends AppWidgetProvider {
 
         alarmManager.setExact(AlarmManager.RTC, time, pendingIntent);
     }
+
 }
